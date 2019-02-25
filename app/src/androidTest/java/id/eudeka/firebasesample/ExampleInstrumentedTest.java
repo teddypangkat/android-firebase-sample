@@ -1,4 +1,4 @@
-package eudeka.id.firebasesample;
+package id.eudeka.firebasesample;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

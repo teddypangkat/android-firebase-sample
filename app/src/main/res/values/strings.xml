@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Firebase Sample</string>
+    <string name="nama">Nama</string>
+    <string name="email">Email</string>
+    <string name="no_telp">No Telp</string>
+    <string name="simpan">Simpan</string>
 </resources>

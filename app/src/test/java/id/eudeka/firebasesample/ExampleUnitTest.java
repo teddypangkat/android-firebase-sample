@@ -1,4 +1,4 @@
-package eudeka.id.firebasesample;
+package id.eudeka.firebasesample;
 
 import org.junit.Test;
 
