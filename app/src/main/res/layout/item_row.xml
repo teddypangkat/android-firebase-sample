@@ -38,6 +38,7 @@
     </LinearLayout>
 
     <ImageView
+        android:id="@+id/imgMenu"
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:src="@drawable/menu" />

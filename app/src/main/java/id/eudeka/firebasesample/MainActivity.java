@@ -9,9 +9,12 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.PopupMenu;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -23,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements UserAdapter.ClickMenuListener {
 
 
     private AlertDialog.Builder dialog;
@@ -39,13 +42,16 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference databaseReference;
     private FirebaseDatabase firebaseDatabase;
 
+    private User mUser;
+
+    private List<String> listKey = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
         initAdapter();
-
 
         firebaseDatabase = FirebaseDatabase.getInstance();
 
@@ -84,12 +90,12 @@ public class MainActivity extends AppCompatActivity {
         fbAddUser.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showDialogAddUser();
+                showDialogAddUser(false, 0);
             }
         });
     }
 
-    private void showDialogAddUser() {
+    private void showDialogAddUser(final boolean isUpdate, final int positionUser) {
 
         final EditText inputNama, inputEmail, inputNoTelp;
         Button btnSimpan;
@@ -103,6 +109,14 @@ public class MainActivity extends AppCompatActivity {
         inputNoTelp = dialogView.findViewById(R.id.edTelp);
         btnSimpan = dialogView.findViewById(R.id.btnSimpan);
 
+        if (isUpdate) {
+            //jika masuk kondisi update
+            inputNama.setText(mUser.getNama());
+            inputEmail.setText(mUser.getEmail());
+            inputNoTelp.setText(mUser.getTelp());
+            btnSimpan.setText("Update");
+        }
+
         dialog.setView(dialogView);
         dialog.setCancelable(true);
         dialog.setTitle("Tambah data user");
@@ -111,11 +125,17 @@ public class MainActivity extends AppCompatActivity {
         btnSimpan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                createuser(inputNama.getText().toString(),
-                        inputEmail.getText().toString(), inputNoTelp.getText().toString());
 
+                if (isUpdate) {
 
+                    updateUser(listKey.get(positionUser), inputNama.getText().toString(), inputEmail.getText().toString(), inputNoTelp.getText().toString());
+                } else {
+                    createUser(inputNama.getText().toString(),
+                            inputEmail.getText().toString(), inputNoTelp.getText().toString());
+
+                }
                 ad.dismiss();
+                addUserEventListener();
             }
         });
 
@@ -123,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void createuser(String nama, String email, String noTelp) {
+    private void createUser(String nama, String email, String noTelp) {
 
         User user = new User(nama, email, noTelp);
         String key = databaseReference.push().getKey();
@@ -131,8 +151,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private void updateUser(String keyUser, String nama, String email, String noTlp) {
+
+        databaseReference.child(keyUser).child("nama").setValue(nama);
+        databaseReference.child(keyUser).child("email").setValue(email);
+        databaseReference.child(keyUser).child("telp").setValue(noTlp);
+
+    }
+
     private void initAdapter() {
-        adapter = new UserAdapter(listUser);
+        adapter = new UserAdapter(listUser, this);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerViewUser.setLayoutManager(layoutManager);
         recyclerViewUser.setAdapter(adapter);
@@ -144,17 +172,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                Iterable<DataSnapshot> snapshotIterator = dataSnapshot.getChildren();
-                Iterator<DataSnapshot> iterator = snapshotIterator.iterator();
+                //Iterable<DataSnapshot> snapshotIterator = dataSnapshot.getChildren();
+                //Iterator<DataSnapshot> iterator = snapshotIterator.iterator();
 
-                if (!listUser.isEmpty()) {
-                    listUser.clear();
-                }
+                emptyDataList();
 
-                while (iterator.hasNext()) {
+                for (DataSnapshot childSnapshot: dataSnapshot.getChildren()) {
 
-                    User user = iterator.next().getValue(User.class);
+                    User user = childSnapshot.getValue(User.class);
+                    String userKey = childSnapshot.getKey();
+
                     listUser.add(user);
+                    listKey.add(userKey);
                 }
 
                 adapter.notifyDataSetChanged();
@@ -166,5 +195,43 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("ERROR", databaseError.getMessage());
             }
         });
+    }
+
+
+    private void emptyDataList() {
+        if (!listUser.isEmpty()) {
+            listUser.clear();
+        }
+
+        if (!listKey.isEmpty()) {
+            listKey.clear();
+        }
+    }
+
+    @Override
+    public void onClickMenu(ImageView view, final int position) {
+
+        PopupMenu popupMenu = new PopupMenu(MainActivity.this, view);
+        popupMenu.getMenuInflater().inflate(R.menu.option_menu, popupMenu.getMenu());
+
+
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+
+                switch (item.getItemId()) {
+
+                    case R.id.update:
+                        mUser = listUser.get(position);
+                        showDialogAddUser(true, position);
+
+                }
+
+                return true;
+            }
+        });
+
+        popupMenu.show();
+
     }
 }
