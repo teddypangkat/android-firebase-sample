@@ -39,6 +39,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         userViewHolder.nama.setText(user.getNama());
         userViewHolder.email.setText(user.getEmail());
         userViewHolder.noTelp.setText(user.getTelp());
+
+
         userViewHolder.imgMenu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

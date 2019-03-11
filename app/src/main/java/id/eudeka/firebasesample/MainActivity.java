@@ -16,11 +16,15 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -48,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements UserAdapter.Click
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
@@ -63,23 +68,21 @@ public class MainActivity extends AppCompatActivity implements UserAdapter.Click
 
         addUserEventListener();
 
-//        firebaseDatabase.getReference("app_title").addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//
-//                String appTitle = dataSnapshot.getValue(String.class);
-//                getSupportActionBar().setTitle(appTitle);
-//            }
-//
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//                //error ketika baca nilai
-//                Log.e("ERROR", "Failed to read app title value.", databaseError.toException());
-//            }
-//        });
-//
 
+        FirebaseInstanceId.getInstance().getInstanceId()
+                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
+
+                        if (!task.isSuccessful()) {
+                            return;
+                        }
+
+                        String token = task.getResult().getToken();
+                        Log.d("TOKEN", token);
+
+                    }
+                });
 
     }
 
@@ -128,7 +131,8 @@ public class MainActivity extends AppCompatActivity implements UserAdapter.Click
 
                 if (isUpdate) {
 
-                    updateUser(listKey.get(positionUser), inputNama.getText().toString(), inputEmail.getText().toString(), inputNoTelp.getText().toString());
+                    updateUser(listKey.get(positionUser), inputNama.getText().toString(),
+                            inputEmail.getText().toString(), inputNoTelp.getText().toString());
                 } else {
                     createUser(inputNama.getText().toString(),
                             inputEmail.getText().toString(), inputNoTelp.getText().toString());
@@ -157,6 +161,11 @@ public class MainActivity extends AppCompatActivity implements UserAdapter.Click
         databaseReference.child(keyUser).child("email").setValue(email);
         databaseReference.child(keyUser).child("telp").setValue(noTlp);
 
+    }
+
+    private void deleteUser(String userKey) {
+        databaseReference.child(userKey).removeValue();
+        addUserEventListener();
     }
 
     private void initAdapter() {
@@ -224,7 +233,10 @@ public class MainActivity extends AppCompatActivity implements UserAdapter.Click
                     case R.id.update:
                         mUser = listUser.get(position);
                         showDialogAddUser(true, position);
+                        break;
 
+                    case R.id.delete:
+                        deleteUser(listKey.get(position));
                 }
 
                 return true;
